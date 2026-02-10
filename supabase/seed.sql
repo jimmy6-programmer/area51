@@ -1,0 +1,2 @@
+-- seed data for supabase
+-- Insert minimal required seed rows here

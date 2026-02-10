@@ -1,0 +1,50 @@
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Types for our database
+export type Category = {
+  id: string
+  name: string
+  display_order: number
+  created_at: string
+}
+
+export type MenuItem = {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  category_id: string | null
+  image_url: string | null
+  available: boolean
+  created_at: string
+  updated_at: string
+  category?: Category
+}
+
+export type Order = {
+  id: string
+  customer_name: string | null
+  customer_email: string | null
+  customer_phone: string | null
+  delivery_address: string | null
+  status: string
+  total_amount: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type OrderItem = {
+  id: string
+  order_id: string
+  menu_item_id: string | null
+  item_name: string
+  item_price: number
+  quantity: number
+  created_at: string
+}

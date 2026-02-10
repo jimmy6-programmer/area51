@@ -1,0 +1,19 @@
+{
+  "name": "area-51-delivery",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^1.8.4",
+    "typescript": "^5"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "start": "turbo run start"
+  }
+}
