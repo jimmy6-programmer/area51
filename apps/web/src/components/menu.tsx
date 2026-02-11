@@ -35,13 +35,13 @@ export function Menu({ onAddToCart }: { onAddToCart: (item: CartMenuItem) => voi
       const { data: catData } = await supabase
         .from("categories")
         .select("*")
-        .order("display_order")
+        .order("name")
       
       // Fetch menu items with category info
       const { data: itemsData } = await supabase
         .from("menu_items")
         .select("*, category:categories(*)")
-        .eq("available", true)
+        .eq("is_available", true)
       
       if (catData) setCategories(catData)
       if (itemsData) setMenuItems(itemsData)

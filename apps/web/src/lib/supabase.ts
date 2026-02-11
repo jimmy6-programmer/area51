@@ -9,7 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Category = {
   id: string
   name: string
-  display_order: number
   created_at: string
 }
 
@@ -20,7 +19,7 @@ export type MenuItem = {
   price: number
   category_id: string | null
   image_url: string | null
-  available: boolean
+  is_available: boolean
   created_at: string
   updated_at: string
   category?: Category

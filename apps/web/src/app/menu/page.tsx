@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { useCart } from "@/hooks/use-cart"
 import { CartMenuItem } from "@/components/menu"
@@ -13,61 +14,7 @@ import { Input } from "@/components/ui/input"
 import { ShoppingCart, Trash2, Plus, Minus, MoveRight, Plus as AddIcon, Loader2, Search } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
-import { supabase, MenuItem as DBMenuItem, Category } from "@/lib/supabase"
-
-// Sample menu items for when database is not available
-const sampleMenuItems: CartMenuItem[] = [
-  {
-    id: "1",
-    name: "Alien Burger",
-    description: "A mysterious patty from another galaxy with secret sauce",
-    price: 12.99,
-    category: "Burgers",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "2",
-    name: "Galactic Pizza",
-    description: "Wood-fired pizza with toppings from across the universe",
-    price: 18.99,
-    category: "Pizza",
-    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "3",
-    name: "Space Fries",
-    description: "Crispy fries seasoned with stardust and herbs",
-    price: 4.99,
-    category: "Sides",
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "4",
-    name: "Meteor Shake",
-    description: "Thick and creamy milkshake that's out of this world",
-    price: 6.99,
-    category: "Drinks",
-    image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "5",
-    name: "Nebula Wings",
-    description: "Spicy chicken wings with a cosmic glaze",
-    price: 14.99,
-    category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "6",
-    name: "Cosmic Salad",
-    description: "Fresh greens with a dressing from the stars",
-    price: 9.99,
-    category: "Salads",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400"
-  }
-]
-
-const sampleCategories = ["All", "Burgers", "Pizza", "Sides", "Drinks", "Appetizers", "Salads"]
+import { Category } from "@/lib/supabase"
 
 export default function MenuPage() {
   const { 
@@ -82,30 +29,21 @@ export default function MenuPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
-  const [menuItems, setMenuItems] = useState<CartMenuItem[]>(sampleMenuItems)
-  const [categories, setCategories] = useState<string[]>(sampleCategories)
-  const [loading, setLoading] = useState(false)
-  const [useSampleData, setUseSampleData] = useState(true)
+  const [menuItems, setMenuItems] = useState<CartMenuItem[]>([])
+  const [categories, setCategories] = useState<string[]>(["All"])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
       try {
-        // Fetch categories
-        const { data: catData, error: catError } = await supabase
-          .from("categories")
-          .select("*")
-          .order("display_order")
-        
-        // Fetch menu items with category info
-        const { data: itemsData, error: itemsError } = await supabase
-          .from("menu_items")
-          .select("*, category:categories(*)")
-          .eq("available", true)
-        
-        if (!catError && !itemsError && catData && itemsData) {
-          const allCategories = ["All", ...catData.map(c => c.name)]
-          const cartItems: CartMenuItem[] = itemsData.map(item => ({
+        // Fetch data from public API route
+        const response = await fetch("/api/menu")
+        const data = await response.json()
+
+        if (response.ok && data) {
+          const allCategories = ["All", ...data.categories.map((c: Category) => c.name)]
+          const cartItems: CartMenuItem[] = data.menuItems.map((item: any) => ({
             id: item.id,
             name: item.name,
             description: item.description || "",
@@ -113,18 +51,19 @@ export default function MenuPage() {
             category: item.category?.name || "Uncategorized",
             image: item.image_url || ""
           }))
-          
+
           setCategories(allCategories)
           setMenuItems(cartItems)
-          setUseSampleData(false)
+        } else {
+          console.error("Error fetching data:", data.error)
         }
       } catch (error) {
-        console.log("Using sample menu data")
+        console.error("Error fetching menu data:", error)
       }
-      
+
       setLoading(false)
     }
-    
+
     fetchData()
   }, [])
 
@@ -149,11 +88,6 @@ export default function MenuPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Our Menu</h1>
           <p className="text-muted-foreground">Explore our classified selection of delicious dishes</p>
-          {useSampleData && (
-            <Badge className="mt-2 bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-              Demo Mode - Using sample data
-            </Badge>
-          )}
         </div>
 
         {loading ? (
@@ -324,10 +258,12 @@ export default function MenuPage() {
                   <span>Total Extraction Cost</span>
                   <span className="text-primary">${totalPrice.toFixed(2)}</span>
                 </div>
-                <Button className="w-full bg-primary text-primary-foreground py-6 text-lg font-bold gap-2">
-                  Initiate Delivery
-                  <MoveRight className="h-5 w-5" />
-                </Button>
+                <Link href="/checkout" onClick={() => setIsCartOpen(false)}>
+                  <Button className="w-full bg-primary text-primary-foreground py-6 text-lg font-bold gap-2">
+                    Initiate Delivery
+                    <MoveRight className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
                   Secure encrypted transmission
                 </p>

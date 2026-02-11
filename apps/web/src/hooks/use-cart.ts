@@ -15,8 +15,42 @@ export type CartItem = MenuItem & {
   quantity: number
 }
 
+const CART_STORAGE_KEY = "area51_cart"
+
+function getStoredCart(): CartItem[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveCart(cart: CartItem[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart))
+  } catch (error) {
+    console.error("Failed to save cart:", error)
+  }
+}
+
 export function useCart() {
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => getStoredCart())
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredCart()
+    if (stored.length > 0) {
+      setCart(stored)
+    }
+  }, [])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    saveCart(cart)
+  }, [cart])
 
   const addToCart = (item: MenuItem) => {
     setCart(prev => {
@@ -40,7 +74,12 @@ export function useCart() {
     setCart(prev => prev.map(i => i.id === id ? { ...i, quantity } : i))
   }
 
-  const clearCart = () => setCart([])
+  const clearCart = () => {
+    setCart([])
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CART_STORAGE_KEY)
+    }
+  }
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0)
   const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)

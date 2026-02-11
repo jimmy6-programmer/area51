@@ -10,78 +10,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Trash2, Plus, Minus, MoveRight, Plus as AddIcon, Star, Clock, Percent, Zap, ChevronLeft, ChevronRight } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, MoveRight, Plus as AddIcon, Star, Clock, Percent, Zap, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import { motion, useAnimation } from "framer-motion"
-
-// Sample menu items for featured section
-const featuredMenuItems: CartMenuItem[] = [
-  {
-    id: "1",
-    name: "Alien Burger",
-    description: "A mysterious patty from another galaxy with secret sauce",
-    price: 12.99,
-    category: "Burgers",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "2",
-    name: "Galactic Pizza",
-    description: "Wood-fired pizza with toppings from across the universe",
-    price: 18.99,
-    category: "Pizza",
-    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "3",
-    name: "Space Fries",
-    description: "Crispy fries seasoned with stardust and herbs",
-    price: 4.99,
-    category: "Sides",
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "4",
-    name: "Meteor Shake",
-    description: "Thick and creamy milkshake that's out of this world",
-    price: 6.99,
-    category: "Drinks",
-    image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "5",
-    name: "Nebula Wings",
-    description: "Spicy chicken wings with a cosmic glaze",
-    price: 14.99,
-    category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "6",
-    name: "Cosmic Salad",
-    description: "Fresh greens with a dressing from the stars",
-    price: 9.99,
-    category: "Salads",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "7",
-    name: "Quantum Tacos",
-    description: "Tacos that exist in multiple flavor states at once",
-    price: 11.99,
-    category: "Mexican",
-    image: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&q=80&w=400"
-  },
-  {
-    id: "8",
-    name: "Stellar Pasta",
-    description: "Handmade pasta with sauce from the constellation",
-    price: 16.99,
-    category: "Italian",
-    image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&q=80&w=400"
-  }
-]
 
 // Sample offers
 const featuredOffers = [
@@ -170,17 +102,49 @@ const reviews = [
 ]
 
 export default function Home() {
-  const { 
-    cart, 
-    addToCart, 
-    removeFromCart, 
-    updateQuantity, 
-    totalItems, 
-    totalPrice 
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    totalItems,
+    totalPrice
   } = useCart()
-  
+
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [offersScrollPosition, setOffersScrollPosition] = useState(0)
+  const [featuredMenuItems, setFeaturedMenuItems] = useState<CartMenuItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchFeaturedItems() {
+      try {
+        // Fetch data from public API route
+        const response = await fetch("/api/menu")
+        const data = await response.json()
+
+        if (response.ok && data) {
+          const cartItems: CartMenuItem[] = data.menuItems.slice(0, 8).map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || "",
+            price: Number(item.price),
+            category: item.category?.name || "Uncategorized",
+            image: item.image_url || ""
+          }))
+          setFeaturedMenuItems(cartItems)
+        } else {
+          console.error("Error fetching featured items:", data.error)
+        }
+      } catch (error) {
+        console.error("Error fetching featured menu data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFeaturedItems()
+  }, [])
 
   const handleAddToCart = (item: CartMenuItem) => {
     addToCart(item)
@@ -224,54 +188,64 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredMenuItems.slice(0, 8).map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card className="overflow-hidden border-border bg-card/50 hover:border-primary/50 transition-all duration-300 group h-full flex flex-col">
-                    <div className="relative h-40 w-full overflow-hidden shrink-0">
-                      {item.image && (
-                        <Image 
-                          src={item.image} 
-                          alt={item.name} 
-                          fill 
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-black/70 text-primary border-primary text-xs">
-                          {item.category}
-                        </Badge>
+            {loading ? (
+              <div className="flex items-center justify-center min-h-[300px]">
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              </div>
+            ) : featuredMenuItems.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No featured dishes available at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredMenuItems.slice(0, 8).map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  >
+                    <Card className="overflow-hidden border-border bg-card/50 hover:border-primary/50 transition-all duration-300 group h-full flex flex-col">
+                      <div className="relative h-40 w-full overflow-hidden shrink-0">
+                        {item.image && (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-black/70 text-primary border-primary text-xs">
+                            {item.category}
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors line-clamp-1">
-                          {item.name}
-                        </CardTitle>
-                        <span className="text-primary font-bold text-sm">${item.price.toFixed(2)}</span>
-                      </div>
-                      <CardDescription className="line-clamp-2 text-sm">
-                        {item.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="pt-0 mt-auto">
-                      <Button 
-                        onClick={() => handleAddToCart(item)}
-                        className="w-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all gap-2 text-sm"
-                      >
-                        <AddIcon className="h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors line-clamp-1">
+                            {item.name}
+                          </CardTitle>
+                          <span className="text-primary font-bold text-sm">${item.price.toFixed(2)}</span>
+                        </div>
+                        <CardDescription className="line-clamp-2 text-sm">
+                          {item.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="pt-0 mt-auto">
+                        <Button
+                          onClick={() => handleAddToCart(item)}
+                          className="w-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all gap-2 text-sm"
+                        >
+                          <AddIcon className="h-4 w-4" />
+                          Add to Cart
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -530,10 +504,12 @@ export default function Home() {
                   <span>Total Extraction Cost</span>
                   <span className="text-primary">${totalPrice.toFixed(2)}</span>
                 </div>
-                <Button className="w-full bg-primary text-primary-foreground py-6 text-lg font-bold gap-2">
-                  Initiate Delivery
-                  <MoveRight className="h-5 w-5" />
-                </Button>
+                <Link href="/checkout" onClick={() => setIsCartOpen(false)}>
+                  <Button className="w-full bg-primary text-primary-foreground py-6 text-lg font-bold gap-2">
+                    Initiate Delivery
+                    <MoveRight className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
                   Secure encrypted transmission
                 </p>
